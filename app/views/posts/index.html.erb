@@ -1,0 +1,93 @@
+
+<div class="container d-flex flex-column justify-content-center">
+
+  <% if user_signed_in? %>
+    <%= link_to 'New Post', new_post_path, class: "mx-auto btn btn-secondary btn-lg mt-5" %>
+  <% end %>
+
+  <br>
+
+  <% if @posts.exists? %>
+    <% @posts.each do |post| %>
+      <div class="card mx-auto mb-2" style="width:50rem">
+        <div class="card-body">
+          <h5 class="card-title">
+            <%= post.user.first_name %>, <%= time_ago_in_words(post.created_at) %> ago, <i class="text-muted"> <%= post.comments.count %> commentaires</i>.
+            <% if post.user == current_user %>
+              <div class="d-flex justify-content-around w-50 mx-auto my-2">
+                <%= link_to 'Modifier', edit_post_path(post), class:"btn btn-success btn-sm" %>
+                <%= link_to 'Supprimer', post, method: :delete, data: { confirm: 'Are you sure?' }, class:"btn btn-danger btn-sm" %>
+              </div>
+            <% end %>
+          </h5>
+          <p class="card-text mb-5"><%= post.content %></p>
+
+          <% post.comments[0,3].each do |comment| %>  <!-- affiche les 3 premiers commentaires uniquement -->
+            <div class="d-flex align-items-center">
+              <div>
+                <p class="text-muted"><%= comment.post.user.first_name %>, <%= time_ago_in_words(comment.created_at) %> ago.</p>
+                <h6 class="card-subtitle mb-2 text-muted"><% comment.rating.times do %> <i class="fa fa-star"></i> <% end %></h6>
+                <h5 class="card-subtitle mb-4"><%= comment.content %></h5>
+              </div>
+              <div class="ml-5">
+                <% if comment.user == current_user %>
+                    <%= link_to edit_comment_path(comment), class:"btn btn-success" do %>
+                      <i class="fa fa-pencil"></i>
+                    <% end %>
+                    <%= link_to comment, method: :delete, data: { confirm: 'Are you sure?' }, class:"btn btn-danger" do %>
+                      <i class="fa fa-trash"></i>
+                    <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if user_signed_in? %>
+            <hr>
+            <div class="d-flex">
+              <div class="d-flex flex-column  w-100">
+                <div id="comment-form-<%= post.id %>" class="display-none">
+                  <%= simple_form_for(@comment) do |f| %>
+                    <%= f.error_notification %>
+                    <%= f.error_notification message: f.object.errors[:base].to_sentence if f.object.errors[:base].present? %>
+
+                    <div class="w-100 text-center">
+                      <%= f.input :content, label:false, required:true, :input_html => {:rows => 4} %>
+                      <%= f.input :rating, collection: [1,2,3,4,5],label:"Laissez une note :", required:true, :input_html => {:rows => 4} %>
+                      <%= f.hidden_field :post_id, value: post.id %>
+                      <%= f.hidden_field :user_id, value: current_user.id %>
+                      <%= f.button :submit, "Valider", class:"btn btn-success mb-2" %>
+                    </div>
+                  <% end %>
+                </div>
+                <div class="d-flex justify-content-around">
+                  <button class="btn btn-success" id="add-comment-<%= post.id %>" onclick="displayForm(<%= post.id %>)">Laisser un avis</button>
+                  <% if post.comments.count > 3 %>
+                    <%= link_to 'Tous les avis', post_path(post), class:"btn btn-primary all-advice" %>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <h2 class="text-center">Pas de posts pour le moment.</h2>
+  <% end %>
+</div>
+
+<br>
+
+<script type="text/javascript">
+  const advice = document.getElementsByClassName("all-advice");
+  function displayForm(el){
+    document.getElementById("add-comment-"+el).style.display = "none";
+    document.getElementById("comment-form-"+el).classList.toggle("display-none");
+
+    Array.from(advice).forEach(ad=>{
+      ad.style.display = "none";
+    })
+  }
+
+</script>
